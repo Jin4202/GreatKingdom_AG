@@ -3,7 +3,7 @@ import { GameState } from '../game/gameState';
 
 export function useGame() {
   const [gameState] = useState(() => new GameState());
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
 
   const placePiece = useCallback((x: number, y: number) => {
     if (gameState.placePiece(x, y)) {
@@ -17,5 +17,5 @@ export function useGame() {
     }
   }, [gameState]);
 
-  return { gameState, placePiece, passTurn };
+  return { gameState, placePiece, passTurn, tick };
 }

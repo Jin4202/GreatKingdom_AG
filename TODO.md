@@ -30,9 +30,9 @@ This file tracks all past achievements and future tasks for the Great Kingdom we
 - [x] **Initialize Project:** Scaffold the application base.
 - [x] **Build the 9x9 Board:** Visuals and interaction.
 - [x] **Piece Logic:** Implement Blue, Orange, and Neutral Castle placements.
-- [ ] **Enclosure Algorithm (사활):** Implement the core logic treating boundaries and Neutral Castle as walls.
-- [ ] **Endgame Algorithm:** Implement the territory counting logic and handicap rules.
-- [ ] **UI Polish:** Add transitions, piece placement micro-animations, and game-over screens.
+- [x] **Enclosure Algorithm (사활):** Implement the core logic treating boundaries and Neutral Castle as walls.
+- [x] **Endgame Algorithm:** Implement the territory counting logic and handicap rules.
+- [x] **UI Polish:** Added dynamic scoreboard, real-time territory visualization overlays, and invalid move glow hints.
 
 ### 5. Final Tests
 - [ ] Automate running all unit tests successfully.

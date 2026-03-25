@@ -3,6 +3,7 @@ import { GameState, type Piece } from '../game/gameState';
 
 interface GameBoardProps {
   gameState: GameState;
+  liveTerritory: { blueTerritory: {x:number, y:number}[], orangeTerritory: {x:number, y:number}[] };
   onPlacePiece: (x: number, y: number) => void;
 }
 
@@ -11,7 +12,7 @@ const CELL_SIZE = 50;
 const MARGIN = 30;
 const CANVAS_SIZE = BOARD_SIZE * CELL_SIZE + MARGIN * 2;
 
-export function GameBoard({ gameState, onPlacePiece }: GameBoardProps) {
+export function GameBoard({ gameState, liveTerritory, onPlacePiece }: GameBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCoord, setHoverCoord] = useState<{x: number, y: number} | null>(null);
 
@@ -24,24 +25,31 @@ export function GameBoard({ gameState, onPlacePiece }: GameBoardProps) {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Draw live territory highlights
+    const drawTerritoryBlock = (x: number, y: number, color: string) => {
+      ctx.fillStyle = color;
+      ctx.fillRect(MARGIN + x * CELL_SIZE + 2, MARGIN + y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+    };
+
+    liveTerritory.blueTerritory.forEach(t => drawTerritoryBlock(t.x, t.y, 'rgba(59, 130, 246, 0.4)'));
+    liveTerritory.orangeTerritory.forEach(t => drawTerritoryBlock(t.x, t.y, 'rgba(249, 115, 22, 0.4)'));
+
     // Draw grid
     ctx.beginPath();
     ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(100, 200, 255, 0.2)'; // Ethereal grid lines
+    ctx.strokeStyle = 'rgba(100, 200, 255, 0.2)';
     
     for (let i = 0; i <= BOARD_SIZE; i++) {
         const p = MARGIN + i * CELL_SIZE;
-        // Vertical
         ctx.moveTo(p, MARGIN);
         ctx.lineTo(p, CANVAS_SIZE - MARGIN);
-        // Horizontal
         ctx.moveTo(MARGIN, p);
         ctx.lineTo(CANVAS_SIZE - MARGIN, p);
     }
     ctx.stroke();
 
     // Helper to draw a piece
-    const drawPiece = (x: number, y: number, type: Piece, isGhost = false) => {
+    const drawPiece = (x: number, y: number, type: Piece, isGhost = false, isInvalid = false) => {
         if (!type) return;
         
         const cx = MARGIN + x * CELL_SIZE + CELL_SIZE / 2;
@@ -51,18 +59,21 @@ export function GameBoard({ gameState, onPlacePiece }: GameBoardProps) {
         let baseColor = '';
         let glowColor = '';
 
-        if (type === 'blue') {
-            baseColor = 'rgba(59, 130, 246, 0.9)'; // Blue
+        if (isInvalid) {
+            baseColor = 'rgba(239, 68, 68, 0.6)'; // Red for suicide/invalid
+            glowColor = 'rgba(239, 68, 68, 0.4)';
+        } else if (type === 'blue') {
+            baseColor = 'rgba(59, 130, 246, 0.9)';
             glowColor = 'rgba(59, 130, 246, 0.5)';
         } else if (type === 'orange') {
-            baseColor = 'rgba(249, 115, 22, 0.9)'; // Orange
+            baseColor = 'rgba(249, 115, 22, 0.9)';
             glowColor = 'rgba(249, 115, 22, 0.5)';
         } else if (type === 'neutral') {
-            baseColor = 'rgba(251, 191, 36, 1)'; // Gold
+            baseColor = 'rgba(251, 191, 36, 1)';
             glowColor = 'rgba(251, 191, 36, 0.6)';
         }
 
-        if (isGhost) {
+        if (isGhost && !isInvalid) {
             baseColor = baseColor.replace(/0\.\d+\)/, '0.3)');
             glowColor = glowColor.replace(/0\.\d+\)/, '0.2)');
         }
@@ -70,20 +81,16 @@ export function GameBoard({ gameState, onPlacePiece }: GameBoardProps) {
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
         
-        // Add glow
         ctx.shadowBlur = isGhost ? 10 : 20;
         ctx.shadowColor = glowColor;
         
-        // Gradient fill
         const gradient = ctx.createRadialGradient(cx - radius/3, cy - radius/3, radius/5, cx, cy, radius);
-        gradient.addColorStop(0, '#ffffff'); // Shine reflection
+        gradient.addColorStop(0, '#ffffff');
         gradient.addColorStop(0.3, baseColor);
         gradient.addColorStop(1, glowColor);
         
         ctx.fillStyle = gradient;
         ctx.fill();
-        
-        // Reset shadow for next drawings
         ctx.shadowBlur = 0;
     };
 
@@ -99,13 +106,15 @@ export function GameBoard({ gameState, onPlacePiece }: GameBoardProps) {
     // Draw hover ghost
     if (hoverCoord && !gameState.gameOver) {
         if (hoverCoord.x >= 0 && hoverCoord.x < BOARD_SIZE && hoverCoord.y >= 0 && hoverCoord.y < BOARD_SIZE) {
-            if (!gameState.board[hoverCoord.y][hoverCoord.x]) {
-                drawPiece(hoverCoord.x, hoverCoord.y, gameState.currentPlayer, true);
+            if (!gameState.board[hoverCoord.y][hoverCoord.x] && !gameState.isWall(hoverCoord.x, hoverCoord.y)) {
+                // Check if valid
+                const isValid = gameState.isValidMove(hoverCoord.x, hoverCoord.y);
+                drawPiece(hoverCoord.x, hoverCoord.y, gameState.currentPlayer, true, !isValid);
             }
         }
     }
 
-  }, [gameState, gameState.board, gameState.currentPlayer, gameState.gameOver, hoverCoord]);
+  }, [gameState, gameState.board, gameState.currentPlayer, gameState.gameOver, hoverCoord, liveTerritory]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (gameState.gameOver) return;

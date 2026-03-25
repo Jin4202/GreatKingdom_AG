@@ -21,9 +21,10 @@
     *   If a player completely surrounds at least one opponent's piece, the capturing player **instantly wins** the game.
     *   Surrounding is calculated **orthogonally** (up, down, left, right). Diagonals do not count.
     *   You can use your own pieces, the board edges, and the Neutral Castle to form the enclosure.
-*   **Placement Restrictions (No Invading Completed Territory)**:
-    *   Players are strictly prohibited from placing a piece inside an opponent's fully completed territory.
-    *   Because of this, a group of pieces only needs **one "eye"** (a single enclosed empty space) to be permanently safe.
+*   **Placement Restrictions & Territory Definition**:
+    1. A Player's territory is defined as a boundary of single player's pieces, the Neutral Castle, and game board edges.
+    2. Game board edges can only be used up to 3 times (among up, left, right, down edges) to form a territory. If a space touches all 4 edges, it is not a completed territory.
+    3. During the game, if a player creates their territory, the other player cannot place a piece inside the completed territory (Placement Restrictions).
 *   **High-Risk Invasions**:
     *   Players can place pieces inside an opponent's *incomplete* territory.
     *   If this invading piece cannot survive and gets surrounded, the invading player instantly loses due to the Sudden Death rule.
