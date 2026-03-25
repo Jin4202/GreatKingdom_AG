@@ -10,7 +10,7 @@ This file tracks all past achievements and future tasks for the Great Kingdom we
 ## 🚀 Future Work (Pending)
 
 ### 1. Planning 
-- [ ] Choose the technology stack (e.g., HTML/JS/CSS vs React/Next.js/Vite, Canvas vs DOM for the board).
+- [x] Choose the technology stack (React + Vite + TypeScript, Canvas for the board).
 - [ ] Design the architecture for the game state, UI rendering, and event handling.
 - [ ] Define the visual style and aesthetics (e.g., color palette for Blue/Orange/Neutral castles, modern rich UI, gradients, animations).
 
@@ -27,9 +27,9 @@ This file tracks all past achievements and future tasks for the Great Kingdom we
 - [ ] Write unit tests for "Territory" calculation and end-of-game scoring logic.
 
 ### 4. Implementation
-- [ ] **Initialize Project:** Scaffold the application base.
-- [ ] **Build the 9x9 Board:** Visuals and interaction.
-- [ ] **Piece Logic:** Implement Blue, Orange, and Neutral Castle placements.
+- [x] **Initialize Project:** Scaffold the application base.
+- [x] **Build the 9x9 Board:** Visuals and interaction.
+- [x] **Piece Logic:** Implement Blue, Orange, and Neutral Castle placements.
 - [ ] **Enclosure Algorithm (사활):** Implement the core logic treating boundaries and Neutral Castle as walls.
 - [ ] **Endgame Algorithm:** Implement the territory counting logic and handicap rules.
 - [ ] **UI Polish:** Add transitions, piece placement micro-animations, and game-over screens.
