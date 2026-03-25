@@ -44,3 +44,9 @@ This file tracks all past achievements and future tasks for the Great Kingdom we
 - [x] Implement Lobby (Room creation, Room browsing, Passwords).
 - [x] Implement Authoritative Server Game Synchronization.
 - [x] Connect React Frontend to Socket Client.
+
+### 7. 3D Graphics Overhaul (Phase 7)
+- [x] Migrate `GameBoard.tsx` from 2D Canvas to `@react-three/fiber`.
+- [x] Procedurally generate Castle geometries using primitives.
+- [x] Implement Scene lighting and tabletop environment.
+- [x] Optimize render loop for low GPU footprint.

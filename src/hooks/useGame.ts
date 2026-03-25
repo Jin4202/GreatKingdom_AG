@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { GameState } from '../game/gameState';
 
 export function useGame() {
-  const [gameState] = useState(() => new GameState());
+  const [gameState, setGameState] = useState(() => new GameState());
   const [tick, setTick] = useState(0);
 
   const placePiece = useCallback((x: number, y: number) => {
@@ -17,5 +17,10 @@ export function useGame() {
     }
   }, [gameState]);
 
-  return { gameState, placePiece, passTurn, tick };
+  const resetGame = useCallback(() => {
+    setGameState(new GameState());
+    setTick(0);
+  }, []);
+
+  return { gameState, placePiece, passTurn, resetGame, tick };
 }

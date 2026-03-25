@@ -1,5 +1,7 @@
-import { useRef, useEffect, useState } from 'react';
-import { GameState, type Piece } from '../game/gameState';
+import { useState } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+import { GameState } from '../game/gameState';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -8,158 +10,157 @@ interface GameBoardProps {
   onPlacePiece: (x: number, y: number) => void;
 }
 
-const BOARD_SIZE = 9;
-const CELL_SIZE = 50;
-const MARGIN = 30;
-const CANVAS_SIZE = BOARD_SIZE * CELL_SIZE + MARGIN * 2;
+const CELL_SIZE = 1.2;
+const getPos = (x: number, y: number): [number, number, number] => [(x - 4) * CELL_SIZE, 0, (y - 4) * CELL_SIZE];
 
-export function GameBoard({ gameState, liveTerritory, role, onPlacePiece }: GameBoardProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [hoverCoord, setHoverCoord] = useState<{x: number, y: number} | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw live territory highlights
-    const drawTerritoryBlock = (x: number, y: number, color: string) => {
-      ctx.fillStyle = color;
-      ctx.fillRect(MARGIN + x * CELL_SIZE + 2, MARGIN + y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-    };
-
-    liveTerritory.blueTerritory.forEach(t => drawTerritoryBlock(t.x, t.y, 'rgba(59, 130, 246, 0.4)'));
-    liveTerritory.orangeTerritory.forEach(t => drawTerritoryBlock(t.x, t.y, 'rgba(249, 115, 22, 0.4)'));
-
-    // Draw grid
-    ctx.beginPath();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(100, 200, 255, 0.2)';
-    
-    for (let i = 0; i <= BOARD_SIZE; i++) {
-        const p = MARGIN + i * CELL_SIZE;
-        ctx.moveTo(p, MARGIN);
-        ctx.lineTo(p, CANVAS_SIZE - MARGIN);
-        ctx.moveTo(MARGIN, p);
-        ctx.lineTo(CANVAS_SIZE - MARGIN, p);
-    }
-    ctx.stroke();
-
-    // Helper to draw a piece
-    const drawPiece = (x: number, y: number, type: Piece, isGhost = false, isInvalid = false) => {
-        if (!type) return;
-        
-        const cx = MARGIN + x * CELL_SIZE + CELL_SIZE / 2;
-        const cy = MARGIN + y * CELL_SIZE + CELL_SIZE / 2;
-        const radius = CELL_SIZE / 2 - 4;
-
-        let baseColor = '';
-        let glowColor = '';
-
-        if (isInvalid) {
-            baseColor = 'rgba(239, 68, 68, 0.6)'; // Red for suicide/invalid
-            glowColor = 'rgba(239, 68, 68, 0.4)';
-        } else if (type === 'blue') {
-            baseColor = 'rgba(59, 130, 246, 0.9)';
-            glowColor = 'rgba(59, 130, 246, 0.5)';
-        } else if (type === 'orange') {
-            baseColor = 'rgba(249, 115, 22, 0.9)';
-            glowColor = 'rgba(249, 115, 22, 0.5)';
-        } else if (type === 'neutral') {
-            baseColor = 'rgba(251, 191, 36, 1)';
-            glowColor = 'rgba(251, 191, 36, 0.6)';
-        }
-
-        if (isGhost && !isInvalid) {
-            baseColor = baseColor.replace(/0\.\d+\)/, '0.3)');
-            glowColor = glowColor.replace(/0\.\d+\)/, '0.2)');
-        }
-
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
-        
-        ctx.shadowBlur = isGhost ? 10 : 20;
-        ctx.shadowColor = glowColor;
-        
-        const gradient = ctx.createRadialGradient(cx - radius/3, cy - radius/3, radius/5, cx, cy, radius);
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(0.3, baseColor);
-        gradient.addColorStop(1, glowColor);
-        
-        ctx.fillStyle = gradient;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-    };
-
-    // Draw pieces
-    for (let y = 0; y < BOARD_SIZE; y++) {
-      for (let x = 0; x < BOARD_SIZE; x++) {
-        if (gameState.board[y][x]) {
-            drawPiece(x, y, gameState.board[y][x]);
-        }
-      }
-    }
-
-    // Draw hover ghost
-    if (hoverCoord && !gameState.gameOver) {
-        if (hoverCoord.x >= 0 && hoverCoord.x < BOARD_SIZE && hoverCoord.y >= 0 && hoverCoord.y < BOARD_SIZE) {
-            if (!gameState.board[hoverCoord.y][hoverCoord.x] && !gameState.isWall(hoverCoord.x, hoverCoord.y)) {
-                // Check if valid
-                const isValid = gameState.isValidMove(hoverCoord.x, hoverCoord.y);
-                if (role === gameState.currentPlayer) {
-                  drawPiece(hoverCoord.x, hoverCoord.y, gameState.currentPlayer, true, !isValid);
-                }
-            }
-        }
-    }
-
-  }, [gameState, gameState.board, gameState.currentPlayer, gameState.gameOver, hoverCoord, liveTerritory]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (gameState.gameOver) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left - MARGIN;
-    const y = e.clientY - rect.top - MARGIN;
-
-    const gridX = Math.floor(x / CELL_SIZE);
-    const gridY = Math.floor(y / CELL_SIZE);
-
-    if (gridX !== hoverCoord?.x || gridY !== hoverCoord?.y) {
-        setHoverCoord({ x: gridX, y: gridY });
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setHoverCoord(null);
-  };
-
-  const handleClick = () => {
-    if (hoverCoord && !gameState.gameOver) {
-        onPlacePiece(hoverCoord.x, hoverCoord.y);
-    }
-  };
+function Castle({ position, type, isGhost = false, isInvalid = false }: any) {
+  const color = isInvalid ? '#ef4444' : type === 'blue' ? '#3b82f6' : type === 'orange' ? '#f97316' : '#fbbf24';
+  const scale = type === 'neutral' ? 1.2 : 1;
+  const height = type === 'neutral' ? 1.5 : 1;
 
   return (
-    <canvas 
-      ref={canvasRef}
-      width={CANVAS_SIZE}
-      height={CANVAS_SIZE}
-      style={{
-        background: 'rgba(255, 255, 255, 0.02)',
-        borderRadius: '16px',
-        boxShadow: 'inset 0 0 40px rgba(0,0,0,0.5), 0 0 20px rgba(0,0,0,0.2)',
-        cursor: gameState.gameOver ? 'default' : 'pointer',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
-    />
+    <group position={position} scale={scale}>
+      <mesh castShadow receiveShadow position={[0, height/2, 0]}>
+        <boxGeometry args={[0.8, height, 0.8]} />
+        <meshStandardMaterial color={color} transparent={isGhost} opacity={isGhost ? 0.4 : 1} roughness={0.3} metalness={0.2} />
+      </mesh>
+      {[-0.3, 0.3].map(bx => 
+        [-0.3, 0.3].map(bz => (
+          <mesh castShadow key={`${bx}-${bz}`} position={[bx, height + 0.1, bz]}>
+            <boxGeometry args={[0.2, 0.2, 0.2]} />
+            <meshStandardMaterial color={color} transparent={isGhost} opacity={isGhost ? 0.4 : 1} roughness={0.3} metalness={0.2} />
+          </mesh>
+        ))
+      )}
+    </group>
+  );
+}
+
+function GridLines() {
+  const lines = [];
+  const size = 9 * CELL_SIZE;
+  
+  for (let i = 0; i < 9; i++) {
+    const pos = (i - 4) * CELL_SIZE;
+    // vertical
+    lines.push(<mesh receiveShadow key={`v${i}`} position={[pos, 0.01, 0]}><boxGeometry args={[0.04, 0.02, size]} /><meshStandardMaterial color="#475569" /></mesh>);
+    // horizontal
+    lines.push(<mesh receiveShadow key={`h${i}`} position={[0, 0.01, pos]}><boxGeometry args={[size, 0.02, 0.04]} /><meshStandardMaterial color="#475569" /></mesh>);
+  }
+  return <group>{lines}</group>;
+}
+
+function Board({ gameState, liveTerritory, role, onPlacePiece }: GameBoardProps) {
+  const [hoverCoord, setHoverCoord] = useState<{x: number, y: number} | null>(null);
+
+  return (
+    <group>
+      {/* Table Top Base */}
+      <mesh receiveShadow position={[0, -0.5, 0]}>
+        <boxGeometry args={[12, 1, 12]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.8} metalness={0.1} />
+      </mesh>
+
+      {/* Play Area Underlay */}
+      <mesh receiveShadow position={[0, -0.01, 0]}>
+         <boxGeometry args={[10 * CELL_SIZE, 0.02, 10 * CELL_SIZE]} />
+         <meshStandardMaterial color="#1e293b" roughness={0.9} />
+      </mesh>
+
+      <GridLines />
+
+      {/* Interactive Cells via invisible hitboxes */}
+      {Array.from({ length: 9 }).map((_, y) =>
+        Array.from({ length: 9 }).map((_, x) => (
+          <mesh 
+            key={`cell-${x}-${y}`} 
+            position={[getPos(x, y)[0], 0.02, getPos(x, y)[2]]} 
+            rotation={[-Math.PI/2, 0, 0]}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!gameState.gameOver) onPlacePiece(x, y);
+            }}
+            onPointerOver={(e) => {
+              e.stopPropagation();
+              if (!gameState.gameOver) setHoverCoord({ x, y });
+            }}
+            onPointerOut={(e) => {
+              e.stopPropagation();
+              setHoverCoord(null);
+            }}
+          >
+            <planeGeometry args={[CELL_SIZE, CELL_SIZE]} />
+            <meshBasicMaterial transparent opacity={0} />
+          </mesh>
+        ))
+      )}
+
+      {/* Placed Pieces */}
+      {gameState.board.map((row, y) => 
+        row.map((piece, x) => {
+          if (!piece) return null;
+          return <Castle key={`piece-${x}-${y}`} position={getPos(x, y)} type={piece} />;
+        })
+      )}
+
+      {/* Hover Ghost Piece */}
+      {hoverCoord && !gameState.gameOver && role === gameState.currentPlayer && !gameState.board[hoverCoord.y][hoverCoord.x] && !gameState.isWall(hoverCoord.x, hoverCoord.y) && (
+        <Castle 
+          position={getPos(hoverCoord.x, hoverCoord.y)} 
+          type={gameState.currentPlayer} 
+          isGhost={true} 
+          isInvalid={!gameState.isValidMove(hoverCoord.x, hoverCoord.y)} 
+        />
+      )}
+
+      {/* Territory Dynamic Auras */}
+      {liveTerritory.blueTerritory.map(t => (
+        <mesh key={`b-ter-${t.x}-${t.y}`} position={[getPos(t.x, t.y)[0], 0.05, getPos(t.x, t.y)[2]]} rotation={[-Math.PI/2, 0, 0]}>
+          <planeGeometry args={[CELL_SIZE * 0.9, CELL_SIZE * 0.9]} />
+          <meshBasicMaterial color="#3b82f6" transparent opacity={0.35} />
+        </mesh>
+      ))}
+      {liveTerritory.orangeTerritory.map(t => (
+        <mesh key={`o-ter-${t.x}-${t.y}`} position={[getPos(t.x, t.y)[0], 0.05, getPos(t.x, t.y)[2]]} rotation={[-Math.PI/2, 0, 0]}>
+          <planeGeometry args={[CELL_SIZE * 0.9, CELL_SIZE * 0.9]} />
+          <meshBasicMaterial color="#f97316" transparent opacity={0.35} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+export function GameBoard(props: GameBoardProps) {
+  return (
+    <div style={{ width: '100%', maxWidth: '800px', minWidth: 'min(100%, 800px)', margin: '0 auto', height: '600px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: '#020617' }}>
+      <Canvas shadows camera={{ position: [0, 8, 12], fov: 45 }}>
+        <ambientLight intensity={0.5} />
+        <directionalLight 
+          castShadow 
+          position={[10, 20, 10]} 
+          intensity={1.5} 
+          shadow-mapSize={[2048, 2048]} 
+          shadow-camera-far={50}
+          shadow-camera-left={-10}
+          shadow-camera-right={10}
+          shadow-camera-top={10}
+          shadow-camera-bottom={-10}
+        />
+        {/* Cinematic Rim Lights */}
+        <pointLight position={[-10, 5, -10]} intensity={2.0} color="#60a5fa" distance={30} />
+        <pointLight position={[10, 5, -10]} intensity={1.5} color="#fb923c" distance={30} />
+        
+        <Board {...props} />
+        
+        <OrbitControls 
+          enablePan={false} 
+          minPolarAngle={Math.PI / 6} 
+          maxPolarAngle={Math.PI / 2.1} 
+          minDistance={8} 
+          maxDistance={25}
+          target={[0, 0, 0]}
+        />
+      </Canvas>
+    </div>
   );
 }
