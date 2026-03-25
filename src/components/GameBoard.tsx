@@ -4,6 +4,7 @@ import { GameState, type Piece } from '../game/gameState';
 interface GameBoardProps {
   gameState: GameState;
   liveTerritory: { blueTerritory: {x:number, y:number}[], orangeTerritory: {x:number, y:number}[] };
+  role: 'blue' | 'orange' | null;
   onPlacePiece: (x: number, y: number) => void;
 }
 
@@ -12,7 +13,7 @@ const CELL_SIZE = 50;
 const MARGIN = 30;
 const CANVAS_SIZE = BOARD_SIZE * CELL_SIZE + MARGIN * 2;
 
-export function GameBoard({ gameState, liveTerritory, onPlacePiece }: GameBoardProps) {
+export function GameBoard({ gameState, liveTerritory, role, onPlacePiece }: GameBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hoverCoord, setHoverCoord] = useState<{x: number, y: number} | null>(null);
 
@@ -109,7 +110,9 @@ export function GameBoard({ gameState, liveTerritory, onPlacePiece }: GameBoardP
             if (!gameState.board[hoverCoord.y][hoverCoord.x] && !gameState.isWall(hoverCoord.x, hoverCoord.y)) {
                 // Check if valid
                 const isValid = gameState.isValidMove(hoverCoord.x, hoverCoord.y);
-                drawPiece(hoverCoord.x, hoverCoord.y, gameState.currentPlayer, true, !isValid);
+                if (role === gameState.currentPlayer) {
+                  drawPiece(hoverCoord.x, hoverCoord.y, gameState.currentPlayer, true, !isValid);
+                }
             }
         }
     }

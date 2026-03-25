@@ -35,6 +35,12 @@ This file tracks all past achievements and future tasks for the Great Kingdom we
 - [x] **UI Polish:** Added dynamic scoreboard, real-time territory visualization overlays, and invalid move glow hints.
 
 ### 5. Final Tests
-- [ ] Automate running all unit tests successfully.
-- [ ] Manual browser gameplay testing for edge cases (e.g., invasion, passing rules).
-- [ ] Fix any visual or functional bugs discovered.
+- [x] Automate running all unit tests successfully.
+- [x] Manual browser gameplay testing for edge cases (e.g., invasion, passing rules).
+- [x] Fix any visual or functional bugs discovered.
+
+### 6. Multiplayer Implementation (Phase 6)
+- [x] Setup Node.js Server with Express & Socket.io.
+- [x] Implement Lobby (Room creation, Room browsing, Passwords).
+- [x] Implement Authoritative Server Game Synchronization.
+- [x] Connect React Frontend to Socket Client.
