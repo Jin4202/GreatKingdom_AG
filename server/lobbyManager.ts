@@ -168,8 +168,11 @@ export class LobbyManager {
     });
 
     socket.on('disconnect', () => {
+      let stateChanged = false;
+      
       this.rooms.forEach((room, id) => {
         const pIndex = room.players.findIndex(p => p.socketId === socket.id);
+        
         if (pIndex !== -1) {
           room.players.splice(pIndex, 1);
           this.io.to(id).emit('player_left', 'Your opponent disconnected.');
@@ -177,13 +180,21 @@ export class LobbyManager {
           if (room.gameState) {
              room.gameState = null;
           }
-          if (room.players.length === 0) {
-            if (room.timeout) clearTimeout(room.timeout);
-            this.rooms.delete(id);
-          }
-          this.io.emit('sync_rooms', this.getPublicRooms());
+          stateChanged = true;
+        }
+
+        // Instantly garbage collect ANY room that is completely empty (0/2).
+        // This catches ghost rooms left by people who disconnected exactly during room-creation before joining.
+        if (room.players.length === 0) {
+          if (room.timeout) clearTimeout(room.timeout);
+          this.rooms.delete(id);
+          stateChanged = true;
         }
       });
+
+      if (stateChanged) {
+        this.io.emit('sync_rooms', this.getPublicRooms());
+      }
     });
   }
 
